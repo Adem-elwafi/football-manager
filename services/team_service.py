@@ -7,7 +7,7 @@ from repositories.player_repo import PlayerRepository
 
 class BaseTeamBalancer(ABC):
     @abstractmethod
-    def balance(self, players: List[str]) -> Tuple[List[str], Tuple[List[str], List[str]]]:
+    def balance(self, players: List[str]) -> Tuple[List[str], List[str]]:
         ...
 
 
@@ -81,12 +81,11 @@ class TeamService:
 
         fresh_a, fresh_b = balancer.balance(unlocked_names)
         self._team_repo.delete_by_match(match_id)
-        current_team = 0
+
         for name in fresh_a:
             players = self._player_repo.search(name)
             if players:
                 self._team_repo.set_team(match_id, players[0].id, 0)
-                current_team = 0
         for name in fresh_b:
             players = self._player_repo.search(name)
             if players:
@@ -103,6 +102,20 @@ class TeamService:
 
     def unlock_player(self, match_id: int, player_id: int) -> None:
         self._team_repo.set_locked(match_id, player_id, False)
+
+    def get_team_assignments(self, match_id: int) -> dict:
+        assignments = self._team_repo.get_by_match(match_id)
+        team_a, team_b, locked_ids = [], [], set()
+        for a in assignments:
+            p = self._player_repo.get_by_id(a.player_id)
+            name = p.name if p else f"Player #{a.player_id}"
+            if a.team == 0:
+                team_a.append({"player_id": a.player_id, "name": name, "is_locked": a.is_locked})
+            else:
+                team_b.append({"player_id": a.player_id, "name": name, "is_locked": a.is_locked})
+            if a.is_locked:
+                locked_ids.add(a.player_id)
+        return {"team_a": team_a, "team_b": team_b, "locked_ids": locked_ids}
 
     def _get_team_names(self, match_id: int) -> Tuple[List[str], List[str]]:
         assignments = self._team_repo.get_by_match(match_id)

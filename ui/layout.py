@@ -60,4 +60,5 @@ def main():
                 payment_service,
                 team_service,
                 summary_service,
+                player_service,
             )
