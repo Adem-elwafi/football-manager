@@ -1,4 +1,5 @@
 from typing import Optional
+from typing import Optional
 from models.attendance import Attendance
 
 
@@ -38,6 +39,27 @@ class AttendanceRepository:
 
     def delete_by_match(self, match_id: int) -> None:
         self._conn.execute("DELETE FROM attendance WHERE match_id = ?", (match_id,))
+
+    def get_count_by_player(self, player_id: int) -> int:
+        cur = self._conn.execute(
+            "SELECT COUNT(*) AS cnt FROM attendance WHERE player_id = ?", (player_id,)
+        )
+        return cur.fetchone()["cnt"]
+
+    def get_last_match_date(self, player_id: int) -> Optional[str]:
+        cur = self._conn.execute(
+            "SELECT m.date_time FROM attendance a JOIN matches m ON a.match_id = m.id "
+            "WHERE a.player_id = ? ORDER BY m.date_time DESC LIMIT 1",
+            (player_id,),
+        )
+        row = cur.fetchone()
+        return row["date_time"] if row else None
+
+    def get_match_ids_by_player(self, player_id: int) -> list[int]:
+        cur = self._conn.execute(
+            "SELECT match_id FROM attendance WHERE player_id = ?", (player_id,)
+        )
+        return [r["match_id"] for r in cur.fetchall()]
 
     def delete_by_player(self, player_id: int) -> None:
         self._conn.execute(

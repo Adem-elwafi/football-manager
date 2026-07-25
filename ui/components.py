@@ -1,19 +1,20 @@
 import streamlit as st
-from typing import Callable
 
 
-def confirm_dialog(key: str, message: str, on_confirm: Callable, *args, **kwargs):
-    if key not in st.session_state:
-        st.session_state[key] = False
-    if st.button("🗑️ Delete", key=f"{key}_btn"):
-        st.session_state[key] = True
-    if st.session_state[key]:
-        st.warning(message)
-        c1, c2 = st.columns(2)
-        if c1.button("✅ Confirm", key=f"{key}_confirm"):
-            on_confirm(*args, **kwargs)
-            st.session_state[key] = False
-            st.rerun()
-        if c2.button("❌ Cancel", key=f"{key}_cancel"):
-            st.session_state[key] = False
-            st.rerun()
+def status_badge(is_active: bool, label_active: str = "Active", label_inactive: str = "Inactive"):
+    if is_active:
+        st.markdown(f"<span style='background-color:#10b981;color:white;padding:2px 10px;border-radius:12px;font-size:0.8em'>{label_active}</span>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<span style='background-color:#6b7280;color:white;padding:2px 10px;border-radius:12px;font-size:0.8em'>{label_inactive}</span>", unsafe_allow_html=True)
+
+
+def payment_badge(amount_paid: float, amount_owed: float):
+    if amount_owed <= 0:
+        return
+    ratio = amount_paid / amount_owed if amount_owed > 0 else 0
+    if ratio >= 1:
+        st.markdown(f"<span style='background-color:#10b981;color:white;padding:2px 10px;border-radius:12px;font-size:0.8em'>Paid</span>", unsafe_allow_html=True)
+    elif ratio > 0:
+        st.markdown(f"<span style='background-color:#f59e0b;color:white;padding:2px 10px;border-radius:12px;font-size:0.8em'>Partial</span>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<span style='background-color:#ef4444;color:white;padding:2px 10px;border-radius:12px;font-size:0.8em'>Unpaid</span>", unsafe_allow_html=True)

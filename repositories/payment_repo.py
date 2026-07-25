@@ -45,6 +45,13 @@ class PaymentRepository:
         )
         return cur.fetchone()["total"]
 
+    def total_by_player(self, player_id: int) -> float:
+        cur = self._conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE player_id = ?",
+            (player_id,),
+        )
+        return cur.fetchone()["total"]
+
     def delete_by_match(self, match_id: int) -> None:
         self._conn.execute("DELETE FROM payments WHERE match_id = ?", (match_id,))
 
