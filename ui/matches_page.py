@@ -1,12 +1,11 @@
 import streamlit as st
-from typing import List
 from services.match_service import MatchService
 from services.attendance_service import AttendanceService
 from services.payment_service import PaymentService
 from services.team_service import TeamService, RandomBalancer
 from services.summary_service import SummaryService
 from services.player_service import PlayerService
-from ui.components import status_badge, payment_badge
+from ui.components import status_badge, payment_badge, match_status_badge
 from utils.dates import get_next_saturday_2030
 from utils.formatters import format_currency, format_date
 
@@ -80,18 +79,23 @@ def _render_match_card(
     is_editing = st.session_state.get(edit_key, False)
 
     with st.container(border=True):
-        cols = st.columns([3, 1, 1.2, 0.5, 0.5])
+        cols = st.columns([2.5, 0.8, 0.8, 1, 0.5, 0.5])
         cols[0].markdown(f"**{format_date(match.date_time)}**")
-        cols[1].markdown(f"👥 {count} attending")
-        col2_text = f"💰 {format_currency(total_paid)} / {format_currency(total_owed)}"
-        cols[2].markdown(col2_text)
+
+        with cols[1]:
+            match_status_badge(match.date_time)
+
+        cols[2].markdown(f"👥 {count}")
+
+        col3_text = f"💰 {format_currency(total_paid)} / {format_currency(total_owed)}"
+        cols[3].markdown(col3_text)
 
         toggle_label = "▾ Hide" if is_expanded else "▸ View"
-        if cols[3].button(toggle_label, key=f"toggle_{match.id}", use_container_width=True):
+        if cols[4].button(toggle_label, key=f"toggle_{match.id}", use_container_width=True):
             st.session_state[expand_key] = not is_expanded
             st.rerun()
 
-        if cols[4].button("🗑️", key=f"trash_{match.id}", help="Delete match"):
+        if cols[5].button("🗑️", key=f"trash_{match.id}", help="Delete match"):
             st.session_state[delete_key] = True
 
         if st.session_state.get(delete_key, False):
