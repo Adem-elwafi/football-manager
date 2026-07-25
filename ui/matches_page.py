@@ -141,8 +141,14 @@ def _render_match_view_mode(
     ta = team_service.get_team_assignments(match.id)
     with st.container(border=True):
         c1, c2 = st.columns(2)
-        c1.markdown("**Team A**\n" + "\n".join(f"- {m['name']}" for m in ta["team_a"]))
-        c2.markdown("**Team B**\n" + "\n".join(f"- {m['name']}" for m in ta["team_b"]))
+        c1.markdown("**Team A**")
+        for m in ta["team_a"]:
+            icon = "🔒 " if m["is_locked"] else ""
+            c1.markdown(f"- {icon}{m['name']}")
+        c2.markdown("**Team B**")
+        for m in ta["team_b"]:
+            icon = "🔒 " if m["is_locked"] else ""
+            c2.markdown(f"- {icon}{m['name']}")
 
     col1, col2 = st.columns([1, 1])
     if col1.button("✏️ Edit", key=f"edit_btn_{match.id}", use_container_width=True):
@@ -222,24 +228,29 @@ def _render_team_editor(match_id, player_service, team_service, attendance_servi
     ta = team_service.get_team_assignments(match_id)
     with st.container(border=True):
         col_a, col_b = st.columns(2)
-        with col_a:
-            st.markdown("**Team A**")
-            for member in ta["team_a"]:
-                is_locked = member["is_locked"]
-                lock_key = f"lock_{match_id}_{member['player_id']}"
-                locked = st.checkbox(f"🔒 {member['name']}", value=is_locked, key=lock_key)
-                if locked != is_locked:
-                    team_service.lock_player(match_id, member['player_id']) if locked else team_service.unlock_player(match_id, member['player_id'])
-                    st.rerun()
-        with col_b:
-            st.markdown("**Team B**")
-            for member in ta["team_b"]:
-                is_locked = member["is_locked"]
-                lock_key = f"lock_{match_id}_{member['player_id']}"
-                locked = st.checkbox(f"🔒 {member['name']}", value=is_locked, key=lock_key)
-                if locked != is_locked:
-                    team_service.lock_player(match_id, member['player_id']) if locked else team_service.unlock_player(match_id, member['player_id'])
-                    st.rerun()
+        for team_col, members, team_label in [
+            (col_a, ta["team_a"], "Team A"),
+            (col_b, ta["team_b"], "Team B"),
+        ]:
+            with team_col:
+                st.markdown(f"**{team_label}**")
+                for member in members:
+                    is_locked = member["is_locked"]
+                    pcols = st.columns([0.3, 0.5, 0.2])
+                    lock_key = f"lock_{match_id}_{member['player_id']}"
+                    label = f"🔒"
+                    locked = pcols[0].checkbox(label, value=is_locked, key=lock_key, label_visibility="collapsed")
+                    if locked != is_locked:
+                        team_service.lock_player(match_id, member['player_id']) if locked else team_service.unlock_player(match_id, member['player_id'])
+                        st.rerun()
+                    name_html = member['name']
+                    if is_locked:
+                        name_html = f"<span style='background-color:#fef3c7;padding:0 6px;border-radius:4px'>{member['name']} 🔒</span>"
+                    pcols[1].markdown(name_html, unsafe_allow_html=True)
+                    if is_locked:
+                        pcols[2].markdown("🔒", unsafe_allow_html=True)
+                    else:
+                        pcols[2].markdown("")
 
 
 def _render_cost_summary(match, payment_service, attendance_service=None, match_service=None):
