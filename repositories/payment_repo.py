@@ -57,3 +57,9 @@ class PaymentRepository:
 
     def delete_by_player(self, player_id: int) -> None:
         self._conn.execute("DELETE FROM payments WHERE player_id = ?", (player_id,))
+
+    def delete_by_player_and_match(self, match_id: int, player_id: int) -> None:
+        self._conn.execute(
+            "DELETE FROM payments WHERE match_id = ? AND player_id = ?",
+            (match_id, player_id),
+        )

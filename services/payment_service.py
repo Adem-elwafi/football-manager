@@ -69,6 +69,9 @@ class PaymentService:
     def record_payment(self, match_id: int, player_id: int, amount: float) -> None:
         self._payment_repo.add(match_id, player_id, amount)
 
+    def undo_payment(self, match_id: int, player_id: int) -> None:
+        self._payment_repo.delete_by_player_and_match(match_id, player_id)
+
     def mark_all_paid(self, match_id: int) -> None:
         per_player = self.calculate_per_player_cost(match_id)
         if per_player <= 0:

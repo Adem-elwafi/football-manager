@@ -45,7 +45,7 @@ def main():
         st.sidebar.title("Navigation")
         page = st.sidebar.radio(
             "Go to",
-            ["Players", "Matches"],
+            ["Players", "Matches", "Payments"],
             label_visibility="collapsed",
         )
 
@@ -62,3 +62,6 @@ def main():
                 summary_service,
                 player_service,
             )
+        elif page == "Payments":
+            from ui.payments_page import render as render_payments
+            render_payments(match_service, payment_service, attendance_service)
