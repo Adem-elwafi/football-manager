@@ -39,7 +39,7 @@ def main():
         )
         team_service = TeamService(team_repo, attendance_repo, player_repo)
         summary_service = SummaryService(
-            match_repo, attendance_repo, payment_repo, team_repo, player_repo
+            match_repo, attendance_repo, payment_repo, team_repo, player_repo, expense_repo
         )
 
         st.sidebar.title("Navigation")

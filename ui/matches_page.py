@@ -163,8 +163,9 @@ def _render_match_view_mode(
         st.rerun()
 
     if st.session_state.get(f"show_summary_{match.id}", False):
-        summary = summary_service.generate_summary(match.id)
-        st.text_area("WhatsApp Summary", value=summary, height=250)
+        show_unpaid = st.checkbox("Include unpaid players", value=True, key=f"unpaid_toggle_{match.id}")
+        summary = summary_service.generate_summary(match.id, include_unpaid=show_unpaid)
+        st.text_area("WhatsApp Summary", value=summary, height=300, key=f"summary_area_{match.id}")
 
 
 def _render_match_edit_mode(
