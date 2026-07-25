@@ -135,8 +135,7 @@ def _render_match_view_mode(
     attendees = attendance_service.get_attendees(match.id)
     st.write(", ".join(p.name for p in attendees) if attendees else "None")
 
-    per_player = payment_service.calculate_per_player_cost(match.id)
-    st.markdown(f"**Per player:** {format_currency(per_player)}")
+    _render_cost_summary(match, payment_service, attendance_service, match_service)
 
     st.markdown("**Teams**")
     ta = team_service.get_team_assignments(match.id)
@@ -171,6 +170,8 @@ def _render_match_edit_mode(
     new_notes = st.text_area("Notes", value=match.notes, key=f"ed_notes_{match.id}")
 
     _render_attendance_editor(match.id, player_service, attendance_service)
+
+    _render_expenses_editor(match.id, match_service, payment_service, attendance_service)
 
     _render_team_editor(match.id, player_service, team_service, attendance_service)
 
@@ -239,6 +240,55 @@ def _render_team_editor(match_id, player_service, team_service, attendance_servi
                 if locked != is_locked:
                     team_service.lock_player(match_id, member['player_id']) if locked else team_service.unlock_player(match_id, member['player_id'])
                     st.rerun()
+
+
+def _render_cost_summary(match, payment_service, attendance_service=None, match_service=None):
+    if attendance_service:
+        count = attendance_service.get_attendance_count(match.id)
+    else:
+        count = 0
+    if count == 0:
+        st.info("No attendees — per-player cost cannot be calculated.")
+        return
+    expenses = match_service.get_expenses(match.id) if match_service else []
+    total_extras = sum(e.amount for e in expenses)
+    total = match.stadium_cost + match.transport_cost + total_extras
+    per_player = total / count
+
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Total Cost", format_currency(total))
+    m2.metric("Attendees", str(count))
+    m3.metric("Per Player", format_currency(per_player))
+
+    if expenses:
+        extras_str = "; ".join(f"{e.description}: {format_currency(e.amount)}" for e in expenses)
+        st.caption(f"**Extras:** {extras_str}")
+    else:
+        st.caption("**Extras:** None")
+
+
+def _render_expenses_editor(match_id, match_service, payment_service, attendance_service=None):
+    st.markdown("**Additional Expenses**")
+    expenses = match_service.get_expenses(match_id)
+    for exp in expenses:
+        cols = st.columns([3, 1, 0.5])
+        cols[0].markdown(f"{exp.description} — {format_currency(exp.amount)}")
+        if cols[2].button("✕", key=f"del_exp_{exp.id}"):
+            match_service.delete_expense(exp.id)
+            st.rerun()
+
+    with st.form(key=f"add_expense_{match_id}", clear_on_submit=True):
+        c1, c2, c3 = st.columns([2, 1, 0.5])
+        desc = c1.text_input("Description", placeholder="e.g. Drinks", label_visibility="collapsed", key=f"exp_desc_{match_id}")
+        amount = c2.number_input("Amount", min_value=0.0, step=5.0, label_visibility="collapsed", key=f"exp_amt_{match_id}")
+        if c3.form_submit_button("➕", use_container_width=True):
+            if desc.strip() and amount > 0:
+                match_service.add_expense(match_id, desc.strip(), amount)
+                st.rerun()
+
+    if attendance_service and attendance_service.get_attendance_count(match_id) > 0:
+        per_player = payment_service.calculate_per_player_cost(match_id)
+        st.caption(f"Updated per-player cost: {format_currency(per_player)}")
 
 
 def _parse_date(date_str: str):

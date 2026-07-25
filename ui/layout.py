@@ -32,7 +32,7 @@ def main():
         team_repo = TeamRepository(conn)
 
         player_service = PlayerService(player_repo, attendance_repo, payment_repo, match_repo, expense_repo)
-        match_service = MatchService(match_repo)
+        match_service = MatchService(match_repo, expense_repo)
         attendance_service = AttendanceService(attendance_repo, player_repo)
         payment_service = PaymentService(
             payment_repo, match_repo, attendance_repo, expense_repo, player_repo
